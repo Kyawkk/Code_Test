@@ -42,9 +42,15 @@ class MovieRepositoryImpl @Inject constructor(
 
     override suspend fun toggleFavoriteMovie(movieId: String, isFavorite: Boolean) {
         CoroutineScope(Dispatchers.IO).launch {
+            dao.setMovieFavorite(movieId,isFavorite)
             if (isFavorite) favoriteDao.addFavoriteMovie(FavoriteMovieId(movieId = movieId))
             else favoriteDao.deleteFavoriteId(movieId)
         }
+    }
+
+    override suspend fun isFavorite(movieId: String) : Boolean{
+        val favoriteMovieIds = favoriteDao.getAllFavoriteIds().map { it.movieId }
+        return movieId in favoriteMovieIds
     }
 
 }

@@ -1,24 +1,20 @@
 package com.kyawzinlinn.tmdb
 
-import android.app.ProgressDialog
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
+import android.view.View
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.kyawzinlinn.tmdb.data.remote.dto.Movie
 import com.kyawzinlinn.tmdb.databinding.ActivityMainBinding
+import com.kyawzinlinn.tmdb.domain.repository.MovieRepository
 import com.kyawzinlinn.tmdb.presentation.adapter.MovieItemAdapter
 import com.kyawzinlinn.tmdb.presentation.viewmodel.MovieViewModel
 import com.kyawzinlinn.tmdb.utils.Constants.IS_FAVORITE_INTENT_EXTRA
 import com.kyawzinlinn.tmdb.utils.Constants.MOVIE_ID_INTENT_EXTRA
 import com.kyawzinlinn.tmdb.utils.MovieType
-import com.kyawzinlinn.tmdb.utils.Resource
-import com.kyawzinlinn.tmdb.utils.dismissLoadingDialog
 import com.kyawzinlinn.tmdb.utils.setUpLayoutTransition
 import com.kyawzinlinn.tmdb.utils.showErrorSnackBar
-import com.kyawzinlinn.tmdb.utils.showLoadingDialog
-import com.kyawzinlinn.tmdb.utils.showToast
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -26,7 +22,7 @@ import javax.inject.Inject
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     @Inject lateinit var viewModel: MovieViewModel
-    private lateinit var loadingDialog: ProgressDialog
+    @Inject lateinit var repository: MovieRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,10 +31,6 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         binding.parent.setUpLayoutTransition()
-
-        loadingDialog = ProgressDialog(this)
-        loadingDialog.setMessage("Loading...")
-        loadingDialog.setCancelable(false)
 
         loadAllMovies()
     }
@@ -49,16 +41,16 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadUpcomingMovies() {
-        viewModel.getUpcomingMovies("1")
+        if(viewModel.upcomingMovies.value == null) viewModel.getUpcomingMovies("1")
         viewModel.upcomingMovies.observe(this){
 
-            if (it.isLoading) loadingDialog.show()
+            if (it.isLoading) binding.upcomingProgressBar.visibility = View.VISIBLE
             if (it.data != null) {
-                loadingDialog.dismiss()
-                setUpMoviesRecyclerview(MovieType.UPCOMING,it.data as List<Movie>)
+                binding.upcomingProgressBar.visibility = View.GONE
+                setUpMovieRecyclerviews(MovieType.UPCOMING,it.data as List<Movie>)
             }
             if (it.error.isNotEmpty()){
-                loadingDialog.dismiss()
+                binding.upcomingProgressBar.visibility = View.GONE
                 showErrorSnackBar(it.error){
                     loadUpcomingMovies()
                 }
@@ -66,31 +58,47 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun setUpMoviesRecyclerview(movieType: MovieType, movies: List<Movie>) {
+    private fun setUpMovieRecyclerviews(movieType: MovieType, movies: List<Movie>) {
         when(movieType){
             MovieType.UPCOMING -> {
-                binding.rvUpcomingMovies.setHasFixedSize(true)
-                val layoutManager = LinearLayoutManager(this)
-                layoutManager.orientation = LinearLayoutManager.HORIZONTAL
-                binding.rvUpcomingMovies.layoutManager = layoutManager
-                val adapter = MovieItemAdapter(movieType,movies, {movie ->
-                    startMovieDetailActivity(movie)
-                }, {id, isFavorite ->
-                    viewModel.toggleFavorite(id, isFavorite)
-                })
-                binding.rvUpcomingMovies.adapter = adapter
+                setUpUpComingRecyclerview(movieType, movies)
             }
             MovieType.POPULAR -> {
-                binding.rvPopularMovies.setHasFixedSize(true)
-                binding.rvPopularMovies.layoutManager = LinearLayoutManager(this)
-                val adapter = MovieItemAdapter(movieType,movies, {movie ->
-                    startMovieDetailActivity(movie)
-                },{id , isFavorite ->
-                    viewModel.toggleFavorite(id,isFavorite)
-                })
-                binding.rvPopularMovies.adapter = adapter
+                setUpPopularRecyclerview(movieType, movies)
             }
         }
+    }
+
+    private fun setUpPopularRecyclerview(
+        movieType: MovieType,
+        movies: List<Movie>
+    ) {
+        binding.rvPopularMovies.setHasFixedSize(true)
+        binding.rvPopularMovies.layoutManager = LinearLayoutManager(this)
+        val adapter = MovieItemAdapter(movieType, { movie ->
+            startMovieDetailActivity(movie)
+        }, { id, isFavorite ->
+            viewModel.toggleFavorite(id, isFavorite)
+        })
+        binding.rvPopularMovies.adapter = adapter
+        adapter.submitList(movies)
+    }
+
+    private fun setUpUpComingRecyclerview(
+        movieType: MovieType,
+        movies: List<Movie>
+    ) {
+        binding.rvUpcomingMovies.setHasFixedSize(true)
+        val layoutManager = LinearLayoutManager(this)
+        layoutManager.orientation = LinearLayoutManager.HORIZONTAL
+        binding.rvUpcomingMovies.layoutManager = layoutManager
+        val adapter = MovieItemAdapter(movieType, { movie ->
+            startMovieDetailActivity(movie)
+        }, { id, isFavorite ->
+            viewModel.toggleFavorite(id, isFavorite)
+        })
+        binding.rvUpcomingMovies.adapter = adapter
+        adapter.submitList(movies)
     }
 
     private fun startMovieDetailActivity(movie: Movie) {
@@ -101,15 +109,17 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadPopularMovies() {
-        viewModel.getPopularMovies("1")
+        // not to fetch data when orientation changes
+        if(viewModel.popularMovies.value == null) viewModel.getPopularMovies("1")
+
         viewModel.popularMovies.observe(this){
-            if (it.isLoading) loadingDialog.show()
+            if (it.isLoading) binding.popularProgressBar.visibility = View.VISIBLE
             if (it.data != null) {
-                loadingDialog.dismiss()
-                setUpMoviesRecyclerview(MovieType.POPULAR,it.data as List<Movie>)
+                binding.popularProgressBar.visibility = View.GONE
+                setUpMovieRecyclerviews(MovieType.POPULAR,it.data as List<Movie>)
             }
             if (it.error.isNotEmpty()){
-                loadingDialog.dismiss()
+                binding.popularProgressBar.visibility = View.GONE
                 showErrorSnackBar(it.error){
                     loadPopularMovies()
                 }

@@ -4,20 +4,18 @@ import android.app.ProgressDialog
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import androidx.recyclerview.widget.LinearLayoutManager
 import coil.load
 import com.kyawzinlinn.tmdb.data.remote.dto.CastsDto
 import com.kyawzinlinn.tmdb.data.remote.dto.MovieDetailsDto
 import com.kyawzinlinn.tmdb.databinding.ActivityMovieDetailBinding
-import com.kyawzinlinn.tmdb.databinding.CastItemBinding
 import com.kyawzinlinn.tmdb.domain.repository.MovieRepository
 import com.kyawzinlinn.tmdb.presentation.adapter.CastItemAdapter
 import com.kyawzinlinn.tmdb.presentation.viewmodel.MovieViewModel
 import com.kyawzinlinn.tmdb.utils.Constants.IMG_URL_PREFIX_500
-import com.kyawzinlinn.tmdb.utils.Constants.IS_FAVORITE_INTENT_EXTRA
 import com.kyawzinlinn.tmdb.utils.Constants.MOVIE_ID_INTENT_EXTRA
 import com.kyawzinlinn.tmdb.utils.showErrorSnackBar
-import com.kyawzinlinn.tmdb.utils.showToast
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -43,7 +41,7 @@ class MovieDetailActivity : AppCompatActivity() {
         dialog.setMessage("Loading...")
         dialog.setCancelable(false)
 
-        isFavorite = intent?.extras?.getBoolean(IS_FAVORITE_INTENT_EXTRA) as Boolean
+        movieId = intent?.extras?.getString(MOVIE_ID_INTENT_EXTRA).toString()
 
         loadData()
         bindUI()
@@ -63,20 +61,48 @@ class MovieDetailActivity : AppCompatActivity() {
         else binding.ivFavorite.load(R.drawable.round_favorite_border_24)
 
         viewModel.toggleFavorite(movieId, isFavorite)
-
     }
 
     private fun loadData() {
-        movieId = intent?.extras?.getString(MOVIE_ID_INTENT_EXTRA).toString()
-        viewModel.getMovieDetails(movieId)
-        viewModel.getMovieCasts(movieId)
+        // not to fetch data on orientation changes
+        if (viewModel.movieDetails.value == null) viewModel.getMovieDetails(movieId)
+        if (viewModel.movieCasts.value == null) viewModel.getMovieCasts(movieId)
     }
 
     private fun bindUI() {
 
-        if (isFavorite) binding.ivFavorite.load(R.drawable.round_favorite_24)
-        else binding.ivFavorite.load(R.drawable.round_favorite_border_24)
+        CoroutineScope(Dispatchers.IO).launch {
+            isFavorite = repository.isFavorite(movieId)
+            withContext(Dispatchers.Main){
+                if (isFavorite) binding.ivFavorite.load(R.drawable.round_favorite_24)
+                else binding.ivFavorite.load(R.drawable.round_favorite_border_24)
+            }
+        }
 
+        bindMovieDetailsUI()
+        bindMovieCastUI()
+    }
+
+    private fun bindMovieCastUI() {
+        viewModel.apply {
+            movieCasts.observe(this@MovieDetailActivity){
+                if (it.isLoading) binding.castProgressBar.visibility = View.VISIBLE
+                if (!it.isLoading && it.data != null){
+                    binding.castProgressBar.visibility = View.GONE
+                    val casts = it.data as CastsDto
+                    setUpCastRecyclerView(casts)
+                }
+                if (it.error.isNotEmpty()){
+                    binding.castProgressBar.visibility = View.GONE
+                    showErrorSnackBar(it.error){
+                        loadData()
+                    }
+                }
+            }
+        }
+    }
+
+    private fun bindMovieDetailsUI() {
         viewModel.apply {
             movieDetails.observe(this@MovieDetailActivity){
 
@@ -94,22 +120,6 @@ class MovieDetailActivity : AppCompatActivity() {
                     }
                 }
 
-                if (it.error.isNotEmpty()){
-                    dialog.dismiss()
-                    showErrorSnackBar(it.error){
-                        loadData()
-                    }
-                }
-            }
-
-            movieCasts.observe(this@MovieDetailActivity){
-                Log.d("TAG", "bindUI: $it")
-                if (it.isLoading) {dialog.show()}
-                if (!it.isLoading && it.data != null){
-                    dialog.dismiss()
-                    val casts = it.data as CastsDto
-                    setUpCastRecyclerView(casts)
-                }
                 if (it.error.isNotEmpty()){
                     dialog.dismiss()
                     showErrorSnackBar(it.error){

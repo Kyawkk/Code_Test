@@ -12,6 +12,8 @@ import com.kyawzinlinn.tmdb.utils.MovieType
 import com.kyawzinlinn.tmdb.utils.Resource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
@@ -28,14 +30,16 @@ class PopularMovieUseCase @Inject constructor(
         emit(Resource.Loading())
 
         val type = MovieType.POPULAR
-        val cachedMovies = movieDao.getMovies(type.toString())
         val favoriteMovieIds = favoriteDao.getAllFavoriteIds().map { it.movieId }
+        // Load cached movies with isFavorite info
+        val cachedMoviesFlow = movieDao.getMovies(type.toString())
+            .map { cachedMovies ->
+                cachedMovies.toMovie().map { movie ->
+                    movie.copy(isFavorite = movie.id in favoriteMovieIds)
+                }
+            }
 
-        cachedMovies.toMovie().map { movie ->
-            movie.isFavorite = movie.id in favoriteMovieIds
-        }
-
-        emit(Resource.Loading(data = cachedMovies.toMovie()))
+        emit(Resource.Loading(data = cachedMoviesFlow.first()))
 
         try {
             val moviesFromApi = repository.getPopularMovies(page)
@@ -48,6 +52,7 @@ class PopularMovieUseCase @Inject constructor(
                 movieDao.insertAll(moviesFromApi.results.toDatabaseMovie(type.toString()))
             }
         }catch (e: Exception){
+            e.printStackTrace()
             when(e){
                 is IOException -> emit(Resource.Error("Network Unavailable: Please check your internet connection and try again."))
                 is HttpException -> emit(Resource.Error("An error occurred. Please check your internet connection."))
@@ -55,7 +60,8 @@ class PopularMovieUseCase @Inject constructor(
             }
         }
 
-        val newMovies = movieDao.getMovies(type.toString()).toMovie()
-        emit(Resource.Success(newMovies))
+        movieDao.getMovies(type.toString()).collect{
+            emit(Resource.Success(it.toMovie()))
+        }
     }
 }

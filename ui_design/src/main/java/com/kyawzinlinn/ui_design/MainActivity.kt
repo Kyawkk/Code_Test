@@ -77,13 +77,13 @@ class MainActivity : AppCompatActivity() {
     private fun setUpClickListeners() {
         binding.apply {
             tvByRates.setOnClickListener {
-                tvByRates.background= resources.getDrawable(R.drawable.option_one_bg)
+                container.background= resources.getDrawable(R.drawable.container_fill)
                 tvByRoom.background = resources.getDrawable(R.drawable.clear_bg)
                 setUpRateRecyclerView()
             }
             tvByRoom.setOnClickListener {
-                tvByRoom.background= resources.getDrawable(R.drawable.option_one_bg)
-                tvByRates.background = resources.getDrawable(R.drawable.clear_bg)
+                container.background= resources.getDrawable(R.drawable.container)
+                tvByRoom.background = resources.getDrawable(R.drawable.parallelogram)
                 setUpRoomRecyclerview()
             }
         }

@@ -44,6 +44,9 @@ class MovieViewModel @Inject constructor(
     private val _movieCasts = MutableLiveData<MovieState>()
     val movieCasts = _movieCasts
 
+    private val _isFavorite = MutableLiveData<Boolean>()
+    val isFavorite = _isFavorite
+
     fun getPopularMovies(page: String){
 
         movieUseCase.popularMovieUseCase(page).onEach {
@@ -89,5 +92,9 @@ class MovieViewModel @Inject constructor(
         viewModelScope.launch {
             repository.toggleFavoriteMovie(movieId,isFavorite)
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
     }
 }

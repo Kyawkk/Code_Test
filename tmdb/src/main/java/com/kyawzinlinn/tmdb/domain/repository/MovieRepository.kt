@@ -12,4 +12,6 @@ interface MovieRepository {
     suspend fun getMovieDetails(movieId: String): MovieDetailsDto
     suspend fun getCasts(movieId: String): CastsDto
     suspend fun toggleFavoriteMovie(movieId: String, isFavorite: Boolean)
+
+    suspend fun isFavorite(movieId: String): Boolean
 }
