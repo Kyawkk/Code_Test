@@ -38,9 +38,4 @@ object ApiModule {
         return MovieRepositoryImpl(api, movieDao,favoriteDao)
     }
 
-    @Provides
-    @Singleton
-    fun providesMovieViewModel(movieUseCase: MovieUseCase, repository: MovieRepository): MovieViewModel{
-        return MovieViewModel(movieUseCase, repository)
-    }
 }

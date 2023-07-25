@@ -3,7 +3,6 @@ package com.kyawzinlinn.tmdb
 import android.app.ProgressDialog
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -26,7 +25,7 @@ import javax.inject.Inject
 
 @AndroidEntryPoint
 class MovieDetailActivity : AppCompatActivity() {
-    @Inject lateinit var viewModel: MovieViewModel
+    private lateinit var viewModel: MovieViewModel
     private lateinit var binding: ActivityMovieDetailBinding
     @Inject lateinit var repository: MovieRepository
     private lateinit var dialog : ProgressDialog
@@ -38,11 +37,11 @@ class MovieDetailActivity : AppCompatActivity() {
         binding = ActivityMovieDetailBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        viewModel = ViewModelProvider(this).get(MovieViewModel::class.java)
+
         dialog = ProgressDialog(this)
         dialog.setMessage("Loading...")
         dialog.setCancelable(false)
-
-        movieId = intent?.extras?.getString(MOVIE_ID_INTENT_EXTRA).toString()
 
         loadData()
         bindUI()
@@ -65,8 +64,10 @@ class MovieDetailActivity : AppCompatActivity() {
     }
 
     private fun loadData() {
-        viewModel.getMovieDetails(movieId)
-        viewModel.getMovieCasts(movieId)
+        if (viewModel.movieDetails.value == null){
+            movieId = viewModel.movieId.value ?: ""
+            viewModel.getMovieDetailsAndCasts(movieId)
+        }
     }
 
     private fun bindUI() {

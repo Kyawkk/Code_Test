@@ -4,6 +4,8 @@ import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
+import androidx.core.os.bundleOf
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.kyawzinlinn.tmdb.data.remote.dto.Movie
 import com.kyawzinlinn.tmdb.databinding.ActivityMainBinding
@@ -21,7 +23,7 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
-    @Inject lateinit var viewModel: MovieViewModel
+    private lateinit var viewModel: MovieViewModel
     @Inject lateinit var repository: MovieRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -29,6 +31,8 @@ class MainActivity : AppCompatActivity() {
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        viewModel = ViewModelProvider(this).get(MovieViewModel::class.java)
 
         binding.parent.setUpLayoutTransition()
 
@@ -103,7 +107,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun startMovieDetailActivity(movie: Movie) {
         val intent = Intent(this, MovieDetailActivity::class.java)
-        intent.putExtra(MOVIE_ID_INTENT_EXTRA,movie.id)
+        val bundle = bundleOf("movie_id" to movie.id)
+        intent.putExtras(bundle)
         intent.putExtra(IS_FAVORITE_INTENT_EXTRA,movie.isFavorite)
         startActivity(intent)
     }
