@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Code Test</string>
+    <string name="first_name_hint">First Name *</string>
+    <string name="last_name_hint">Last Name *</string>
+    <string name="email_address_hint">Email Address *</string>
+    <string name="date_of_birth_hint">Date Of Birth *</string>
+    <string name="nationality_hint">Nationality *</string>
+    <string name="country_of_residence_hint">Country Of Residence *</string>
+</resources>
