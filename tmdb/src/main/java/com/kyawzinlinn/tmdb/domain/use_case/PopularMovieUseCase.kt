@@ -52,7 +52,6 @@ class PopularMovieUseCase @Inject constructor(
                 movieDao.insertAll(moviesFromApi.results.toDatabaseMovie(type.toString()))
             }
         }catch (e: Exception){
-            e.printStackTrace()
             when(e){
                 is IOException -> emit(Resource.Error("Network Unavailable: Please check your internet connection and try again."))
                 is HttpException -> emit(Resource.Error("An error occurred. Please check your internet connection."))
