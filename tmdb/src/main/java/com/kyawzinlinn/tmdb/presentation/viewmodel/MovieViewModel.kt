@@ -2,6 +2,7 @@ package com.kyawzinlinn.tmdb.presentation.viewmodel
 
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.kyawzinlinn.tmdb.data.local.dao.MovieDao
 import com.kyawzinlinn.tmdb.data.local.database.toMovie
@@ -25,6 +26,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
+import javax.inject.Singleton
 
 @HiltViewModel
 class MovieViewModel @Inject constructor(

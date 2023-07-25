@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import coil.load
 import com.kyawzinlinn.tmdb.data.remote.dto.CastsDto
@@ -64,9 +65,8 @@ class MovieDetailActivity : AppCompatActivity() {
     }
 
     private fun loadData() {
-        // not to fetch data on orientation changes
-        if (viewModel.movieDetails.value == null) viewModel.getMovieDetails(movieId)
-        if (viewModel.movieCasts.value == null) viewModel.getMovieCasts(movieId)
+        viewModel.getMovieDetails(movieId)
+        viewModel.getMovieCasts(movieId)
     }
 
     private fun bindUI() {
