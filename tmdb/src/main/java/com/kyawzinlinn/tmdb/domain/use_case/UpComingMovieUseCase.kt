@@ -4,14 +4,12 @@ import com.kyawzinlinn.tmdb.data.local.dao.FavoriteDao
 import com.kyawzinlinn.tmdb.data.local.dao.MovieDao
 import com.kyawzinlinn.tmdb.data.local.database.toMovie
 import com.kyawzinlinn.tmdb.data.remote.dto.Movie
-import com.kyawzinlinn.tmdb.data.remote.dto.PopularMoviesDto
 import com.kyawzinlinn.tmdb.data.remote.dto.toDatabaseMovie
 import com.kyawzinlinn.tmdb.domain.repository.MovieRepository
 import com.kyawzinlinn.tmdb.utils.MovieType
 import com.kyawzinlinn.tmdb.utils.Resource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
@@ -39,7 +37,8 @@ class UpComingMovieUseCase @Inject constructor(
                 }
             }
 
-        emit(Resource.Loading(data = cachedMoviesFlow.first()))
+        val cachedMovies = cachedMoviesFlow.first()
+        if (cachedMovies.isNotEmpty()) emit(Resource.Success(data = cachedMovies))
 
         try {
             val moviesFromApi = repository.getUpcomingMovies(page).results
@@ -47,7 +46,7 @@ class UpComingMovieUseCase @Inject constructor(
             emit(Resource.Success(data = moviesFromApi))
 
             withContext(Dispatchers.IO){
-                movieDao.deleteMovies(type.toString())
+                movieDao.deleteMovie(type.toString())
                 movieDao.insertAll(moviesFromApi.toDatabaseMovie(type.toString()))
             }
         }catch (e: Exception){

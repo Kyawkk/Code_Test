@@ -16,7 +16,7 @@ interface MovieDao {
     suspend fun insertAll(movies: List<DatabaseMovie>)
 
     @Query("delete from Movie where type = :type")
-    suspend fun deleteMovies(type: String)
+    suspend fun deleteMovie(type: String)
 
     @Query("UPDATE Movie SET isFavorite = :isFavorite WHERE id = :movieId")
     suspend fun setMovieFavorite(movieId: String, isFavorite: Boolean)

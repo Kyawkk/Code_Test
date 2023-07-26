@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import com.kyawzinlinn.tmdb.domain.repository.MovieRepository
 import com.kyawzinlinn.tmdb.domain.use_case.MovieUseCase
@@ -41,6 +42,15 @@ class MovieViewModel @Inject constructor(
     val movieId: LiveData<String> get() = _movieId
 
     fun getPopularMovies(page: String){
+
+        /*val data = movieUseCase.popularMovieUseCase(page).asLiveData()
+        data.observe(this){
+            when(it){
+                is Resource.Loading -> _popularMovies.value = MovieState(isLoading = true)
+                is Resource.Success -> _popularMovies.value = MovieState(data = it.data)
+                is Resource.Error -> MovieState(error = it.message.toString())
+            }
+        }*/
 
         movieUseCase.popularMovieUseCase(page).onEach {
             when(it){

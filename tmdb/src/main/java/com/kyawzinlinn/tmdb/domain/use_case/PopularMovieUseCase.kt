@@ -1,11 +1,9 @@
 package com.kyawzinlinn.tmdb.domain.use_case
 
-import android.util.Log
 import com.kyawzinlinn.tmdb.data.local.dao.FavoriteDao
 import com.kyawzinlinn.tmdb.data.local.dao.MovieDao
 import com.kyawzinlinn.tmdb.data.local.database.toMovie
 import com.kyawzinlinn.tmdb.data.remote.dto.Movie
-import com.kyawzinlinn.tmdb.data.remote.dto.PopularMoviesDto
 import com.kyawzinlinn.tmdb.data.remote.dto.toDatabaseMovie
 import com.kyawzinlinn.tmdb.domain.repository.MovieRepository
 import com.kyawzinlinn.tmdb.utils.MovieType
@@ -39,7 +37,8 @@ class PopularMovieUseCase @Inject constructor(
                 }
             }
 
-        emit(Resource.Loading(data = cachedMoviesFlow.first()))
+        val cachedMovies = cachedMoviesFlow.first()
+        if (cachedMovies.isNotEmpty()) emit(Resource.Success(data = cachedMovies))
 
         try {
             val moviesFromApi = repository.getPopularMovies(page)
@@ -48,7 +47,7 @@ class PopularMovieUseCase @Inject constructor(
 
             emit(Resource.Success(data = moviesFromApi.results))
             withContext(Dispatchers.IO){
-                movieDao.deleteMovies(type.toString())
+                movieDao.deleteMovie(type.toString())
                 movieDao.insertAll(moviesFromApi.results.toDatabaseMovie(type.toString()))
             }
         }catch (e: Exception){
